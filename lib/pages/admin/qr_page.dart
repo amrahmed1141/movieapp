@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:movieapp/pages/admin/QrScannerWidget.dart';
 
 class QrPage extends StatefulWidget {
   const QrPage({super.key});
@@ -8,6 +10,35 @@ class QrPage extends StatefulWidget {
 }
 
 class _QrPageState extends State<QrPage> {
+  final String collectionName = 'AllQrCode';
+  final String documentId = '829qQzfVQYjvrbpWXo9l';
+  final String arrayName = 'QRCode';
+  List<dynamic>? array;
+
+  Future<List?> fetchQrCode() async {
+    try {
+      DocumentSnapshot snapshot = await FirebaseFirestore.instance
+          .collection(collectionName)
+          .doc(documentId)
+          .get();
+      if (snapshot.exists) {
+        array = snapshot[arrayName];
+        return array;
+      } else {
+        throw 'documnet doesnt exist';
+      }
+    } catch (e) {
+      print('Error fetching QR code: $e');
+      return [];
+    }
+  }
+
+  @override
+  void initState() {
+    fetchQrCode();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,7 +57,11 @@ class _QrPageState extends State<QrPage> {
               ),
               ElevatedButton(
                 onPressed: () {
-                 
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              QrCodeScanner(qrcodedata: array!)));
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black, // Button color
@@ -47,4 +82,4 @@ class _QrPageState extends State<QrPage> {
           )),
     );
   }
-  }
+}

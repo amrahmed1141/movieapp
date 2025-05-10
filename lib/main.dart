@@ -5,15 +5,36 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:movieapp/constants/stripe.dart';
 import 'package:movieapp/firebase_options.dart';
+import 'package:movieapp/pages/admin/qr_page.dart';
+import 'package:movieapp/pages/users/forget_password.dart';
 import 'package:movieapp/widgets/nav_bottom.dart';
 import 'package:movieapp/widgets/welcome.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
-  Stripe.publishableKey = publishablekey;
-  await Firebase.initializeApp();
-  runApp(const MyApp());
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    
+    // Initialize Firebase first
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // Try to load .env file, but don't crash if it fails
+    try {
+      await dotenv.load(fileName: ".env");
+    } catch (e) {
+      print('Warning: Could not load .env file: $e');
+    }
+
+    // Set Stripe key with fallback
+    Stripe.publishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? '';
+    
+    runApp(const MyApp());
+  } catch (e) {
+    print('Error during initialization: $e');
+    // Still run the app even if there's an error
+    runApp(const MyApp());
+  }
 }
 
 class MyApp extends StatelessWidget {

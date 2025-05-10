@@ -1,21 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:movieapp/constant.dart';
+import 'package:movieapp/services/locals/shared_preference.dart';
 
-class Profile extends StatelessWidget {
+class Profile extends StatefulWidget {
   const Profile({super.key});
+
+  @override
+  State<Profile> createState() => _ProfileState();
+}
+
+class _ProfileState extends State<Profile> {
+  String? name, id, image, email;
+
+  getTheSharedpreference() async {
+    name = await SharedPrefercenceHelper().getUserName();
+    id = await SharedPrefercenceHelper().getUserId();
+    image = await SharedPrefercenceHelper().getUserImage();
+    email = await SharedPrefercenceHelper().getUserEmail();
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    getTheSharedpreference();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: appBackgroundColor,
-      body: SingleChildScrollView(
+      body: name == null ? const Center(child: CircularProgressIndicator()) : SingleChildScrollView(
         child: Column(
           children: [
             Container(
               height: 300,
               decoration: const BoxDecoration(
                 color: buttonColor,
-                borderRadius:  BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(30),
                   bottomRight: Radius.circular(30),
                 ),
@@ -31,23 +53,23 @@ class Profile extends StatelessWidget {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 2),
                       ),
-                      child: const CircleAvatar(
+                      child:  CircleAvatar(
                         radius: 50,
-                        backgroundImage: AssetImage('assets/images/photo.jpeg'),
+                        backgroundImage: NetworkImage(image!),
                       ),
                     ),
                     const SizedBox(height: 10),
-                    const Text(
-                      'Amr Ahmed',
-                      style: TextStyle(
+                     Text(
+                      name!,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const Text(
-                      'amr@example.com',
-                      style: TextStyle(
+                     Text(
+                      email!,
+                      style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 16,
                       ),
@@ -123,49 +145,49 @@ class Profile extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildProfileOption({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(15),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
+Widget _buildProfileOption({
+  required IconData icon,
+  required String title,
+  required VoidCallback onTap,
+}) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 15),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: Colors.white,
+              size: 24,
+            ),
+            const SizedBox(width: 15),
+            Text(
+              title,
+              style: const TextStyle(
                 color: Colors.white,
-                size: 24,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
               ),
-              const SizedBox(width: 15),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const Spacer(),
-              const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.white54,
-                size: 16,
-              ),
-            ],
-          ),
+            ),
+            const Spacer(),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white54,
+              size: 16,
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }

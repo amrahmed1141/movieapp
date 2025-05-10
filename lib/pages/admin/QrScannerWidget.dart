@@ -1,74 +1,64 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
-class QrScannerWidget extends StatefulWidget {
-  final Function(String) onCodeScanned;
-
-  const QrScannerWidget({Key? key, required this.onCodeScanned}) : super(key: key);
+class QrCodeScanner extends StatefulWidget {
+  List qrcodedata;
+  QrCodeScanner({super.key, required this.qrcodedata});
 
   @override
-  State<QrScannerWidget> createState() => _QrScannerWidgetState();
+  State<QrCodeScanner> createState() => _QrCodeScannerState();
 }
 
-class _QrScannerWidgetState extends State<QrScannerWidget> {
-  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
-  QRViewController? controller;
-  bool _isScanning = false;
+class _QrCodeScannerState extends State<QrCodeScanner> {
+  final MobileScannerController _cameraController = MobileScannerController();
 
-  @override
-  void reassemble() {
-    super.reassemble();
-    if (Platform.isAndroid) {
-      controller?.pauseCamera();
+  void _onDetect(BarcodeCapture capture) {
+    for (final barcode in capture.barcodes) {
+      if (barcode.rawValue != null) {
+        final String code = barcode.rawValue!;
+        if (widget.qrcodedata.contains(code)) {
+          _cameraController.stop();
+          _showDialog(code);
+        }
+        break;
+      }
     }
-    controller?.resumeCamera();
+  }
+
+  void _showDialog(String code) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('QR Code Matched'),
+          content: Text('Code detected: $code'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        QRView(
-          key: qrKey,
-          onQRViewCreated: _onQRViewCreated,
-          overlay: QrScannerOverlayShape(
-            borderColor: Colors.red,
-            borderRadius: 10,
-            borderLength: 30,
-            borderWidth: 10,
-            cutOutSize: MediaQuery.of(context).size.width * 0.8,
-          ),
-        ),
-        if (_isScanning)
-          Center(child: CircularProgressIndicator()),
-      ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Qr Code Scanner'),
+      ),
+      body: MobileScanner(onDetect: _onDetect, controller: _cameraController),
     );
-  }
-
-  void _onQRViewCreated(QRViewController controller) {
-    setState(() {
-      this.controller = controller;
-    });
-    controller.scannedDataStream.listen((scanData) {
-      if (scanData.code != null) {
-        setState(() {
-          _isScanning = false;
-        });
-        widget.onCodeScanned(scanData.code!);
-      } else {
-        setState(() {
-          _isScanning = true;
-        });
-      }
-    });
   }
 
   @override
   void dispose() {
-    controller?.dispose();
+    _cameraController.dispose();
     super.dispose();
   }
 }
-
-// TODO Implement this library.

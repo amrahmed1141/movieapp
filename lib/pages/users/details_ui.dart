@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:movieapp/constant.dart';
-import 'package:movieapp/screens/select_seat_screen.dart';
+import 'package:movieapp/pages/users/select_seat_screen.dart';
 import 'package:movieapp/widgets/movie_info.dart';
 
 class DetailsScreenUi extends StatefulWidget {

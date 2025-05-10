@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:movieapp/constant.dart';
+import 'package:movieapp/pages/users/forget_password.dart';
 import 'package:movieapp/pages/users/home.dart';
 import 'package:movieapp/services/firebase/database.dart';
 import 'package:movieapp/services/locals/shared_preference.dart';
@@ -155,7 +156,14 @@ class _SignInState extends State<SignIn> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const ForgetPassword()),
+                          );
+                        },
                         child: Text(
                           'Forget Password ?',
                           style: AppFont.lightTextStyle(),

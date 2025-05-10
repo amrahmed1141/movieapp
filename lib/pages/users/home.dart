@@ -3,8 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:movieapp/constant.dart';
 import 'package:movieapp/model/categories.dart';
-import 'package:movieapp/screens/details_ui.dart';
+import 'package:movieapp/pages/users/details_ui.dart';
 import 'package:movieapp/services/firebase/database.dart';
+import 'package:movieapp/services/locals/shared_preference.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -14,6 +15,16 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  String? name, id, image, email;
+
+  getTheSharedpreference() async {
+    name = await SharedPrefercenceHelper().getUserName();
+    id = await SharedPrefercenceHelper().getUserId();
+    image = await SharedPrefercenceHelper().getUserImage();
+    email = await SharedPrefercenceHelper().getUserEmail();
+    setState(() {});
+  }
+
   int _currentIndex = 0;
   int _selectedCategoryIndex = 0; // Default to first category selected
   Stream? moviesItemStream;
@@ -33,12 +44,12 @@ class _HomeState extends State<Home> {
   // Method to filter movies based on search query
   List<DocumentSnapshot> filterMovies(List<DocumentSnapshot> movies) {
     if (_searchQuery.isEmpty) return movies;
-    
+
     return movies.where((movie) {
       final name = movie['name'].toString().toLowerCase();
       final category = movie['category'].toString().toLowerCase();
       final query = _searchQuery.toLowerCase();
-      
+
       return name.contains(query) || category.contains(query);
     }).toList();
   }
@@ -46,7 +57,7 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    // Initialize with first category
+    getTheSharedpreference();
     updateMoviesStream(categories[0].name);
   }
 
@@ -227,174 +238,194 @@ class _HomeState extends State<Home> {
       backgroundColor: appBackgroundColor,
       appBar: AppBar(
         backgroundColor: appBackgroundColor,
-        title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        title:Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 10),
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Text(
+                name == null ? 'Loading...' : 'Welcome, $name', // ✅ Safe
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 1,
+                  color: Colors.white54,
+                ),
+              ),
+              if (name != null) // Only show wave if name is loaded
+                Image.asset('assets/images/wave.png',
+                    height: 20, width: 20, fit: BoxFit.cover),
+            ],
+          ),
+          const SizedBox(height: 5),
+          const Text(
+            'Time to relax and reserve for Movie night!',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+      if (image != null) // Only show image if loaded
+        ClipRRect(
+          borderRadius: BorderRadius.circular(60),
+          child: Image.network(
+            image!,
+            width: 50,
+            height: 50,
+            fit: BoxFit.cover,
+          ),
+        ),
+    ],
+  ),
+),
+      ),
+      body: name == null
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
                 children: [
-                  Text(
-                    'Welcome Amr',
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 1,
-                        color: Colors.white54),
+                  const SizedBox(height: 20),
+                  // Search Bar
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    child: Container(
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.white10.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Search movies...',
+                          hintStyle:
+                              TextStyle(color: Colors.white.withOpacity(0.5)),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: Colors.white.withOpacity(0.5),
+                          ),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(
+                                    Icons.clear,
+                                    color: Colors.white.withOpacity(0.5),
+                                  ),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() {
+                                      _searchQuery = '';
+                                    });
+                                  },
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 15, vertical: 15),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value;
+                          });
+                        },
+                      ),
+                    ),
                   ),
-                  Text(
-                    'Time to relax and reserve for Movie night!',
-                    style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  const Row(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(left: 20),
+                        child: Text('Category',
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    height: 120, // Increased from 100 to 120
+                    width: MediaQuery.of(context).size.width,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: categories.length,
+                      shrinkWrap: true,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: GestureDetector(
+                            onTap: () async {
+                              setState(() {
+                                _selectedCategoryIndex = index;
+                              });
+                              updateMoviesStream(categories[index].name);
+                            },
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min, // Added this line
+                              children: [
+                                Container(
+                                  margin: const EdgeInsets.all(5),
+                                  padding: const EdgeInsets.all(15),
+                                  decoration: BoxDecoration(
+                                    color: _selectedCategoryIndex == index
+                                        ? buttonColor
+                                        : Colors.white10.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(15),
+                                    border: _selectedCategoryIndex == index
+                                        ? Border.all(
+                                            color: buttonColor, width: 2)
+                                        : null,
+                                  ),
+                                  child: Image.asset(
+                                    categories[index].emoji,
+                                    fit: BoxFit.cover,
+                                    height: 30,
+                                    width: 30,
+                                  ),
+                                ),
+                                const SizedBox(
+                                    height: 5), // Reduced from 10 to 5
+                                Text(
+                                  categories[index].name,
+                                  style: TextStyle(
+                                    fontSize: 12, // Reduced from 14 to 12
+                                    color: _selectedCategoryIndex == index
+                                        ? buttonColor
+                                        : Colors.white,
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  Container(
+                    margin: const EdgeInsets.all(10),
+                    height: 350,
+                    child: allMovies(),
                   ),
                 ],
               ),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(60),
-                child: Image.asset(
-                  'assets/images/photo.jpeg',
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Container(
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Colors.white10.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: Colors.white24),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: 'Search movies...',
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Colors.white.withOpacity(0.5),
-                    ),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(
-                              Icons.clear,
-                              color: Colors.white.withOpacity(0.5),
-                            ),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() {
-                                _searchQuery = '';
-                              });
-                            },
-                          )
-                        : null,
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
-                ),
-              ),
             ),
-            const SizedBox(height: 10,),
-            const Row(
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(left: 20),
-                  child: Text('Category',
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 120, // Increased from 100 to 120
-              width: MediaQuery.of(context).size.width,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: categories.length,
-                shrinkWrap: true,
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 5),
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: GestureDetector(
-                      onTap: () async {
-                        setState(() {
-                          _selectedCategoryIndex = index;
-                        });
-                        updateMoviesStream(categories[index].name);
-                      },
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min, // Added this line
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.all(5),
-                            padding: const EdgeInsets.all(15),
-                            decoration: BoxDecoration(
-                              color: _selectedCategoryIndex == index
-                                  ? buttonColor
-                                  : Colors.white10.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(15),
-                              border: _selectedCategoryIndex == index
-                                  ? Border.all(color: buttonColor, width: 2)
-                                  : null,
-                            ),
-                            child: Image.asset(
-                              categories[index].emoji,
-                              fit: BoxFit.cover,
-                              height: 30,
-                              width: 30,
-                            ),
-                          ),
-                          const SizedBox(height: 5), // Reduced from 10 to 5
-                          Text(
-                            categories[index].name,
-                            style: TextStyle(
-                              fontSize: 12, // Reduced from 14 to 12
-                              color: _selectedCategoryIndex == index
-                                  ? buttonColor
-                                  : Colors.white,
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 30),
-            Container(
-              margin: const EdgeInsets.all(10),
-              height: 350,
-              child: allMovies(),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
